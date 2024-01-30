@@ -1,0 +1,20 @@
+{
+    "name": "music_app",
+    "version": "0.0.1",
+    "description": "This's my music application .",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "electron",
+        "reactjs"
+    ],
+    "author": "Larryle",
+    "license": "ISC",
+    "dependencies": {
+        "electron": "^28.2.0",
+        "electron-reload": "^2.0.0-alpha.1"
+    }
+}

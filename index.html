@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Lê Bá Trình</title>
+        <style>
+            body {
+                background: url("access/background/background1.avif") no-repeat
+                    center;
+                background-size: cover;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                animation: changeBackground 30s linear infinite;
+            }
+
+            @keyframes changeBackground {
+                0% {
+                    background: url("access/background/1311951.jpg") no-repeat
+                        center;
+                    background-size: cover;
+                }
+                25% {
+                    background: url("access/background/564835.jpg") no-repeat
+                        center;
+                    background-size: cover;
+                }
+                50% {
+                    background: url("access/background/611138.png") no-repeat
+                        center;
+                    background-size: cover;
+                }
+                75% {
+                    background: url("access/background/632051.png") no-repeat
+                        center;
+                    background-size: cover;
+                }
+                100% {
+                    background: url("access/background/736461.png") no-repeat
+                        center;
+                    background-size: cover;
+                }
+            }
+
+            #app {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #toggle-music {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background-color: green;
+                color: white;
+                z-index: 2;
+            }
+
+            #progress-bar {
+                width: 100%;
+                margin-top: 20px;
+            }
+
+            #time-display {
+                margin-top: 10px;
+                color: white;
+            }
+
+            #title-music.play {
+                animation: marquee 10s linear infinite;
+            }
+
+            #container-control {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+            }
+
+            .btn-prev,
+            .btn-next {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                background-color: rgb(25, 24, 81);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px;
+                cursor: pointer;
+            }
+
+            .btn-prev:active,
+            .btn-next:active {
+                background-color: red;
+            }
+
+            #icon-menu {
+                position: absolute;
+                top: 5vh;
+                right: 0;
+                z-index: 1;
+            }
+
+            .menu {
+                position: absolute;
+                top: 20vh;
+                right: -200px;
+                display: flex;
+                flex-direction: column;
+                width: 200px;
+                overflow-y: scroll;
+                background-color: #333;
+                color: white;
+                transition: right 0.3s ease;
+                z-index: 1;
+            }
+
+            .wrapper-music {
+                height: 50px;
+                padding: 10px;
+                box-sizing: border-box;
+                cursor: pointer;
+                transition: 0.3s;
+            }
+            .wrapper-music:hover {
+                background-color: antiquewhite;
+                color: black;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="icon-menu" onclick="toggleMenu()">
+                <img src="./access/icon/mẹnu.png" alt="menu" />
+            </div>
+            <div id="menu" class="menu"></div>
+            <h1 id="title-music" style="color: white; margin-bottom: 50px">
+                Let's Start Now
+            </h1>
+
+            <div id="container-control">
+                <div class="btn-prev" onclick="prevMusic()">⬅️</div>
+                <button id="toggle-music" onclick="toggleMusic()">
+                    Toggle Music
+                </button>
+                <div class="btn-next" onclick="nextMusic()">➡️</div>
+            </div>
+
+            <input
+                type="range"
+                id="progress-bar"
+                min="0"
+                max="100"
+                value="0"
+                onchange="seekMusic()"
+            />
+            <div id="time-display">0:00 / 0:00</div>
+        </div>
+
+        <script>
+            let list_music = [];
+            fetch("./access/db/list.json")
+                .then((response) => response.json())
+                .then((data) => {
+                    list_music = data;
+                    const menu = document.getElementById("menu");
+                    list_music.forEach((musicItem) => {
+                        const wrapperMusic = document.createElement("div");
+                        wrapperMusic.className = "wrapper-music";
+                        wrapperMusic.innerText = musicItem.title;
+                        wrapperMusic.onclick = () =>
+                            selectMusic(musicItem.path);
+                        menu.appendChild(wrapperMusic);
+                    });
+                })
+                .catch((error) =>
+                    console.error("Error fetching music data:", error)
+                );
+
+            let index = 0;
+            let index_prev = -1;
+            let music = null;
+            let btnPlay = document.getElementById("toggle-music");
+            let titleMusic = document.getElementById("title-music");
+            let progressBar = document.getElementById("progress-bar");
+            let timeDisplay = document.getElementById("time-display");
+            let menu = document.getElementById("menu");
+
+            let fillDataToMenu = () => {
+                list_music.forEach((musicItem) => {
+                    const wrapperMusic = document.createElement("div");
+                    wrapperMusic.className = "wrapper-music";
+                    wrapperMusic.innerText = musicItem.title;
+                    wrapperMusic.onclick = () => selectMusic(musicItem.path);
+                    menu.appendChild(wrapperMusic);
+                });
+            };
+
+            fillDataToMenu();
+
+            function toggleMenu() {
+                const menuRight = parseInt(getComputedStyle(menu).right);
+                menu.style.right = menuRight === 0 ? "-200px" : "0";
+            }
+
+            function selectMusic(path) {
+                if (music) {
+                    music.pause();
+                }
+                index_prev = index;
+                index = list_music.findIndex((music) => music.path === path);
+                toggleMusic();
+                toggleMenu();
+            }
+
+            function toggleMusic() {
+                if (music && !music.paused) {
+                    music.pause();
+                    btnPlay.textContent = "Play";
+                    btnPlay.style.background = "green";
+                    titleMusic.classList.remove("play");
+                } else {
+                    btnPlay.textContent = "Pause";
+
+                    if (index_prev !== index)
+                        music = new Audio(
+                            `./access/music/${list_music[index].path}`
+                        );
+                    music.addEventListener("timeupdate", updateProgressBar);
+                    music.play();
+                    titleMusic.innerHTML = list_music[index].title;
+                    btnPlay.style.background = "red";
+                    titleMusic.classList.add("play");
+                }
+            }
+
+            function updateProgressBar() {
+                const progress = (music.currentTime / music.duration) * 100;
+                progressBar.value = progress;
+                updateTimeDisplay(music.currentTime, music.duration);
+            }
+
+            function seekMusic() {
+                const seekTime = (progressBar.value / 100) * music.duration;
+                music.currentTime = seekTime;
+            }
+
+            function updateTimeDisplay(currentTime, duration) {
+                const currentMinutes = Math.floor(currentTime / 60);
+                const currentSeconds = Math.floor(currentTime % 60);
+                const durationMinutes = Math.floor(duration / 60);
+                const durationSeconds = Math.floor(duration % 60);
+
+                timeDisplay.innerHTML = `${currentMinutes}:${
+                    currentSeconds < 10 ? "0" : ""
+                }${currentSeconds} / ${durationMinutes}:${
+                    durationSeconds < 10 ? "0" : ""
+                }${durationSeconds}`;
+            }
+
+            function nextMusic() {
+                if (music) {
+                    music.pause();
+                }
+                index_prev = index;
+                index = (index + 1) % list_music.length;
+                toggleMusic();
+            }
+
+            function prevMusic() {
+                if (music) {
+                    music.pause();
+                }
+                index_prev = index;
+                index = (index - 1 + list_music.length) % list_music.length;
+                music = null;
+                toggleMusic();
+            }
+        </script>
+    </body>
+</html>
